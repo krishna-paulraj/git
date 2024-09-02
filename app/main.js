@@ -3,10 +3,11 @@ const path = require("path");
 const zlib = require("zlib");
 
 // You can use print statements as follows for debugging, they'll be visible when running tests.
-console.log("Logs from your program will appear here!");
+// console.log("Logs from your program will appear here!");
 
 // Uncomment this block to pass the first stage
 const command = process.argv[2];
+const hash = process.argv[4];
 
 switch (command) {
   case "init":
@@ -34,7 +35,6 @@ function createGitDirectory() {
 }
 
 function createObjectDirectory() {
-  const hash = process.argv[4];
   const content = fs.readFileSync(
     path.join(
       process.cwd(),
@@ -45,9 +45,6 @@ function createObjectDirectory() {
     ),
   );
 
-  zlib.inflate(content, (err, res) => {
-    if (!err) {
-      console.log(res.toString().split("/0")[1]);
-    }
-  });
+  const res = zlib.inflateSync(content);
+  process.stdout.write(res.toString().split("\x00")[1]);
 }
