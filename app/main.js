@@ -2,6 +2,8 @@ const fs = require("fs");
 const path = require("path");
 const zlib = require("zlib");
 const crypto = require("crypto");
+const { defaultMaxListeners } = require("events");
+const { spawn } = require("child_process");
 
 // You can use print statements as follows for debugging, they'll be visible when running tests.
 // console.log("Logs from your program will appear here!");
@@ -18,6 +20,18 @@ switch (command) {
     break;
   case "hash-object":
     createHashObject();
+    break;
+  case "ls-tree":
+    {
+      const flag = process.argv[3];
+      const treeSHA = process.argv[4];
+
+      if (flag === "--name-only") {
+        readTree(treeSHA);
+      } else {
+        throw new Error(`unknown flag ${flag}`);
+      }
+    }
     break;
   default:
     throw new Error(`Unknown command ${command}`);
@@ -74,4 +88,27 @@ function createHashObject() {
   fs.writeFileSync(objectFile, content);
 
   process.stdout.write(hash);
+}
+
+function readTree(sha) {
+  const file = fs.readFileSync(
+    path.join(".git", "objects", sha.slice(0, 2), sha.slice(2)),
+  );
+
+  const decompressedFile = zlib.inflateSync(file).toString();
+
+  decompressedFile.split(" ");
+
+  let names = decompressedFile
+    .split("\x00")
+    .filter(
+      (ele) =>
+        ele.includes("100644") ||
+        ele.includes("100755") ||
+        ele.includes("120000") ||
+        ele.includes("40000"),
+    )
+    .map((y) => y.split(" ")[1]);
+
+  names.map((ele) => process.stdout.write(`${ele}\n`));
 }
